@@ -5,6 +5,9 @@ import { clientOf } from './auth.js';
 import { messagePreview } from '../presenters.js';
 
 const SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
+// Занг баъди 60 с маъно надорад; паём то як рӯз интизори телефони хомӯш мемонад.
+const CALL_TTL_SECONDS = 60;
+const MESSAGE_TTL_SECONDS = 86_400;
 
 /**
  * Firebase Cloud Messaging HTTP v1 бе SDK: service account (аз панели админ ё env) → OAuth2 (JWT RS256)
@@ -73,10 +76,10 @@ export class FcmClient {
     }
   }
 
-  async send(token, data, priority, collapseKey) {
+  async send(token, data, priority, collapseKey, ttlSeconds = MESSAGE_TTL_SECONDS) {
     const accessToken = await this.accessToken();
     if (!accessToken) return { ok: false, unregistered: false, retryable: true, error: 'fcm_auth_failed' };
-    const android = { priority: priority === 'high' ? 'HIGH' : 'NORMAL', ttl: priority === 'high' ? '60s' : '86400s' };
+    const android = { priority: priority === 'high' ? 'HIGH' : 'NORMAL', ttl: `${ttlSeconds}s` };
     if (collapseKey) android.collapse_key = collapseKey;
     try {
       const response = await fetch(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(this.credentials().project_id)}/messages:send`, {
@@ -162,7 +165,8 @@ export class Push {
             mention: mentioned ? '1' : '0',
           },
           `c:${conversationId}`,
-          'normal',
+          // HIGH: паёми чат дар Doze ҳам фавран мерасад (тавсияи FCM барои мессенҷерҳо).
+          'high',
         ),
       );
     }
@@ -175,6 +179,13 @@ export class Push {
     const notify = await this.db.value('SELECT notify_calls FROM user_settings WHERE user_id = $1', [calleeId]);
     if (notify === false) return;
     const id = await this.enqueue(calleeId, 'call', { type: 'call', callId, callerId, callerName, callType }, `call:${callId}`, 'high');
+    await this.flush(1, [id]);
+  }
+
+  /** Занг пеш аз ҷавоб қатъ шуд — зангӯлаи қабулкунанда хомӯш (collapse бо push-и занг). */
+  async notifyCallEnded(calleeId, callId) {
+    if (!this.enabled()) return;
+    const id = await this.enqueue(calleeId, 'call', { type: 'call_ended', callId }, `call:${callId}`, 'high');
     await this.flush(1, [id]);
   }
 
@@ -208,7 +219,8 @@ export class Push {
       let retry = false;
       let lastError = 'unknown';
       for (const target of targets) {
-        const result = await this.fcm.send(target.fcm_token, data, item.priority, item.collapse_key);
+        const ttl = item.type === 'call' ? CALL_TTL_SECONDS : MESSAGE_TTL_SECONDS;
+        const result = await this.fcm.send(target.fcm_token, data, item.priority, item.collapse_key, ttl);
         if (result.ok) {
           delivered = true;
           continue;

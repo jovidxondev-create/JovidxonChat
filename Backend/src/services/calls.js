@@ -7,6 +7,10 @@ import { presentCall } from '../presenters.js';
 import { iso } from './users.js';
 
 const RING_TIMEOUT = 45;
+const CF_TURN_URL = 'https://rtc.live.cloudflare.com/v1/turn/keys';
+// Калиди Cloudflare 24 соат эътибор дорад; ҳар соат нав мегирем (занги дароз ҳам бехатар).
+const CF_TURN_TTL_SECONDS = 86_400;
+const CF_TURN_REFRESH_MS = 60 * 60 * 1000;
 const SIGNAL_KINDS = ['offer', 'answer', 'ice', 'renegotiate', 'hangup'];
 
 /**
@@ -56,15 +60,26 @@ export class Calls {
     const row = await this.db.one(
       `UPDATE calls SET status = $2, end_reason = $3, ended_at = now(),
          duration_seconds = CASE WHEN answered_at IS NULL THEN 0 ELSE EXTRACT(EPOCH FROM (now() - answered_at))::int END
-       WHERE id = $1 AND status IN ('ringing', 'accepted') RETURNING id`,
+       WHERE id = $1 AND status IN ('ringing', 'accepted') RETURNING id, callee_id, answered_at`,
       [callId, status, reason],
     );
-    if (row) await this.ctx.bus.publish({ t: 'call', k: 'updated', id: callId });
+    if (row) {
+      await this.ctx.bus.publish({ t: 'call', k: 'updated', id: callId });
+      // Ҷавоб набуд: телефони қабулкунанда (шояд барнома баста) зангӯларо қатъ кунад.
+      if (!row.answered_at) {
+        this.ctx.push
+          .notifyCallEnded(row.callee_id, callId)
+          .catch((error) => this.ctx.log?.warn({ err: { message: error.message } }, 'push_call_ended_failed'));
+      }
+    }
     return Boolean(row);
   }
 
-  /** GET /calls/config — STUN/TURN барои WebRTC; TURN бо credential-и муваққатӣ (coturn use-auth-secret) ё собит. */
-  config(request) {
+  /**
+   * GET /calls/config — STUN/TURN барои WebRTC: TURN бо credential-и муваққатӣ (coturn use-auth-secret),
+   * собит ё Cloudflare Realtime TURN (калидҳо дар сервер сохта мешаванд).
+   */
+  async config(request) {
     const settings = this.ctx.settings;
     const servers = [];
     const stun = settings.get('calls_stun_urls');
@@ -80,7 +95,43 @@ export class Calls {
         servers.push({ urls: turn, username: settings.get('calls_turn_username'), credential: settings.get('calls_turn_credential') });
       }
     }
+    const cloudflare = await this.cloudflareIceServers();
+    if (cloudflare) servers.push(...cloudflare);
     return { ice_servers: servers, ring_timeout: RING_TIMEOUT, enabled: settings.get('calls_enabled') };
+  }
+
+  /** Cloudflare Realtime TURN: generate-ice-servers (кэш 1 соат); хато — калидҳои кӯҳна то анҷоми мӯҳлаташон. */
+  async cloudflareIceServers() {
+    const keyId = this.ctx.settings.get('calls_turn_cf_key_id');
+    const token = this.ctx.settings.get('calls_turn_cf_api_token');
+    if (!keyId || !token) return null;
+    const cacheKey = crypto.createHash('sha256').update(`${keyId}|${token}`).digest('hex');
+    const cached = this.cfCache?.key === cacheKey ? this.cfCache : null;
+    if (cached && cached.refreshAt > Date.now()) return cached.servers;
+    try {
+      const response = await fetch(`${CF_TURN_URL}/${encodeURIComponent(keyId)}/credentials/generate-ice-servers`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ttl: CF_TURN_TTL_SECONDS }),
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) throw new Error(`http_${response.status}`);
+      const json = await response.json();
+      const list = Array.isArray(json?.iceServers) ? json.iceServers : json?.iceServers ? [json.iceServers] : [];
+      const servers = list
+        .map((server) => ({
+          // Порти 53 дар бисёр шабакаҳо баста аст — танҳо вақт мегирад.
+          urls: (Array.isArray(server?.urls) ? server.urls : [server?.urls]).filter((url) => typeof url === 'string' && !/:53(\?|$)/.test(url)),
+          ...(server?.username ? { username: String(server.username), credential: String(server.credential ?? '') } : {}),
+        }))
+        .filter((server) => server.urls.length);
+      if (!servers.length) throw new Error('empty');
+      this.cfCache = { key: cacheKey, servers, refreshAt: Date.now() + CF_TURN_REFRESH_MS, expiresAt: Date.now() + CF_TURN_TTL_SECONDS * 1000 };
+      return servers;
+    } catch (error) {
+      this.ctx.log?.warn({ error: error?.message }, 'cloudflare_turn_failed');
+      return cached && cached.expiresAt > Date.now() ? cached.servers : null;
+    }
   }
 
   /** POST /calls {user_id, type: voice|video} */

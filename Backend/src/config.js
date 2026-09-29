@@ -106,6 +106,8 @@ export function loadConfig(env = process.env) {
       calls_turn_secret: str(env.TURN_SECRET),
       calls_turn_username: str(env.TURN_USERNAME),
       calls_turn_credential: str(env.TURN_CREDENTIAL),
+      calls_turn_cf_key_id: str(env.CALLS_TURN_CF_KEY_ID),
+      calls_turn_cf_api_token: str(env.CALLS_TURN_CF_API_TOKEN),
       fcm_service_account: str(env.FCM_SERVICE_ACCOUNT_JSON),
     },
   };

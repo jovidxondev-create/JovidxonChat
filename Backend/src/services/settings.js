@@ -43,6 +43,9 @@ export const SETTING_DEFS = {
   calls_turn_secret: { type: 'string', group: 'calls', secret: true, max: 256, fallback: '' },
   calls_turn_username: { type: 'string', group: 'calls', max: 256, fallback: '' },
   calls_turn_credential: { type: 'string', group: 'calls', secret: true, max: 256, fallback: '' },
+  // Cloudflare Realtime TURN: калидҳои муваққатӣ дар сервер сохта мешаванд (1000 GB/моҳ ройгон).
+  calls_turn_cf_key_id: { type: 'string', group: 'calls', max: 200, fallback: '' },
+  calls_turn_cf_api_token: { type: 'string', group: 'calls', secret: true, max: 500, fallback: '' },
 
   fcm_service_account: { type: 'json', group: 'push', secret: true, max: 20_000, fallback: '', check: checkServiceAccount },
 };

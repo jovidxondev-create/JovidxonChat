@@ -321,12 +321,13 @@ admin-ро танҳо owner хориҷ мекунад. Баромадани owne
 
 Push (агар FCM service account дар панели админ ворид шуда бошад) — танҳо data:
 `{type: message, conversationId, messageId, senderName, preview, unreadCount, mention}`,
-`{type: call, callId, callerId, callerName, callType}`. Mute ва `notify_*` риоя мешаванд.
+`{type: call, callId, callerId, callerName, callType}` (HIGH, 60 с), `{type: call_ended, callId}` — зангкунанда пеш аз ҷавоб қатъ кард
+(ҳамон collapse key, зангӯла хомӯш мешавад). Паёмҳо — HIGH, TTL 1 рӯз. Mute ва `notify_*` риоя мешаванд.
 
 ### Зангҳо (signaling барои WebRTC)
 | | Метод | Роҳ | Бадан | Ҷавоб |
 | --- | --- | --- | --- | --- |
-| 🔒 | GET | `/calls/config` | — | `{ice_servers: [{urls, username?, credential?}], ring_timeout}` |
+| 🔒 | GET | `/calls/config` | — | `{ice_servers: [{urls, username?, credential?}], ring_timeout}` — STUN + TURN (coturn secret, собит ё Cloudflare: калид дар сервер сохта мешавад) |
 | 🔒 | POST | `/calls` | `{user_id, type: voice\|video}` | `{call}` (банд → 409 `CALL_UNAVAILABLE`) |
 | 🔒 | GET | `/calls` | — | `{calls}` (таърих) |
 | 🔒 | GET | `/calls/{id}` | — | `{call}` (45 с бе ҷавоб → `missed`) |

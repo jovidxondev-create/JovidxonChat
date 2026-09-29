@@ -191,6 +191,8 @@ const tg = {
   s_calls_turn_secret: 'TURN secret (coturn use-auth-secret)',
   s_calls_turn_username: 'TURN корбар (статикӣ)',
   s_calls_turn_credential: 'TURN парол (статикӣ)',
+  s_calls_turn_cf_key_id: 'Cloudflare TURN — Key ID',
+  s_calls_turn_cf_api_token: 'Cloudflare TURN — API token',
   s_fcm_service_account: 'Firebase service account (JSON)',
 
   admins_new: 'Админи нав',
@@ -425,6 +427,8 @@ const ru = {
   s_calls_enabled: 'Звонки включены',
   s_calls_turn_username: 'TURN пользователь (статический)',
   s_calls_turn_credential: 'TURN пароль (статический)',
+  s_calls_turn_cf_key_id: 'Cloudflare TURN — Key ID',
+  s_calls_turn_cf_api_token: 'Cloudflare TURN — API token',
   admins_new: 'Новый администратор',
   create: 'Создать',
   role_super_admin: 'Супер-админ',

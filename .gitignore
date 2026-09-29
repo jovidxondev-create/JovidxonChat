@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 *.jks
+google-services.json
 *.keystore
 keystore.properties
 local.properties

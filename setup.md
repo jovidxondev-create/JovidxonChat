@@ -224,12 +224,59 @@ Release / Google Play: барои калиди release ва **Play App Signing**
 
 ---
 
-## 8. Push (FCM) — қадами навбатӣ
+## 8. Push-огоҳиҳо (Firebase Cloud Messaging)
 
-Сервер омода аст (FCM HTTP v1): Firebase Console → Project settings → Service accounts → **Generate new private key** →
-мундариҷаи JSON-ро ба **Панел → Танзимот → Push** гузоред. Қисми Android (`google-services.json`,
-`FirebaseMessagingService`) ҳанӯз илова нашудааст — бе он огоҳиҳо танҳо вақте меоянд, ки барнома кушода аст (WebSocket).
-Барои ин лоиҳаи Firebase бо package `com.jovidxon.chat` лозим аст.
+Код омода аст: сервер push-ро тавассути FCM HTTP v1 мефиристад, барнома токенро сабт мекунад ва огоҳиномаро
+нишон медиҳад (як огоҳинома барои ҳар чат, зер кардан — ҳамон чат кушода мешавад). Бе қадамҳои поён барнома
+кор мекунад, аммо огоҳӣ танҳо ҳангоми кушода будани барнома меояд (WebSocket).
+
+**1. Лоиҳаи Firebase** — [console.firebase.google.com](https://console.firebase.google.com) → **Create a project**.
+Беҳтар: дар поёни саҳифа **«Add Firebase to Google Cloud project»** → ҳамон лоиҳае, ки Google Sign-In дар он аст
+(`601976830935`). Google Analytics лозим нест.
+
+**2. Барномаи Android** — Project Overview → **Add app** → нишонаи Android:
+* *Android package name*: `com.jovidxon.chat` (ҳатман ҳамин)
+* *App nickname*: `JovidxonChat`; *SHA-1* — ихтиёрӣ (`74:59:CB:E7:FD:AD:23:53:89:BA:A7:92:5C:E5:93:30:6D:2D:5B:02`)
+* **Register app** → **Download google-services.json** → файлро ба ин ҷо гузоред:
+  `Android/JovidxonChat/app/google-services.json`. Қадамҳои «Add Firebase SDK»-ро гузаронед — дар код аллакай ҳаст.
+
+**3. Калиди сервер** — ⚙ **Project settings** → **Service accounts** → *Firebase Admin SDK* → **Generate new private key**
+→ файли JSON бор мешавад. Мундариҷаи пурраи онро дар **Панели админ → Танзимот → Push (FCM)** гузоред ва сабт кунед
+(дар база бо AES-256-GCM рамзгузорӣ мешавад). Баъд файлро нест кунед — ба касе нафиристед ва ба git нагузоред.
+
+**4. Санҷиш дар Firebase** — Project settings → **Cloud Messaging** → *Firebase Cloud Messaging API (V1)*: **Enabled**.
+
+**5. APK** — барномаро аз нав созед (Android Studio → *Build → Build APK(s)* ё `./gradlew :app:assembleDebug`) ва насб
+кунед. Баъди воридшавӣ барнома иҷозати огоҳиномаро мепурсад — **Allow**.
+
+**Санҷиш:** Панели админ → **Система** → «Push (FCM)» ✓. Барномаро пӯшед ва аз ҳисоби дигар паём фиристед — огоҳинома
+бояд ояд. Агар наояд: телефон → Танзимот → Барномаҳо → JovidxonChat → Огоҳиномаҳо фаъол; Render → Logs → `push_failed`
+ё `fcm_token_failed` (калиди JSON нодуруст/аз лоиҳаи дигар).
+
+`google-services.json` махфӣ нест, аммо ба `.gitignore` илова шудааст. Бе он барнома бе push сохта мешавад (огоҳии Gradle).
+
+---
+
+## 8.1 Зангҳои овозӣ ва видеоӣ — сервери TURN
+
+Зангҳо WebRTC мебошанд: овоз ва видео мустақим байни телефонҳо (P2P) мераванд, сервер танҳо signaling мекунад.
+Видео 720p/30 кадр (то 2.5 Mbps), овоз Opus бо ҳазфи акси садо. Занги воридотӣ ҳатто дар экрани қулф пурраэкран
+меояд (агар Firebase — қисми 8 — танзим бошад; бе он танҳо ҳангоми кушода будани барнома).
+
+**TURN ҳатмист барои шабакаҳои мобилӣ.** Операторон аксар вақт CGNAT доранд — пайвасти мустақим (STUN) нашавад, видео
+бояд тавассути сервери TURN гузарад. Бе TURN баъзе зангҳо «Пайваст нашуд» мешаванд. Варианти тавсияшуда —
+**Cloudflare Realtime TURN** (1000 GB дар як моҳ ройгон, серверҳо дар тамоми ҷаҳон — таъхири кам):
+
+1. [dash.cloudflare.com](https://dash.cloudflare.com) → ҳисоби ройгон → менюи чап **Realtime** → **TURN Server** → **Create**
+   → ном `JovidxonChat`.
+2. Ду қиматро нусха кунед: **Turn Token ID** ва **API Token** (API token махфӣ аст — ба касе нафиристед).
+3. **Панели админ → Танзимот → Зангҳо (WebRTC)** → «Cloudflare TURN — Key ID» ва «Cloudflare TURN — API token» → **Сабт**.
+
+Сервер калидҳои муваққатии TURN-ро худаш месозад (24 соат, ҳар соат нав) — API token ҳеҷ гоҳ ба телефон намеравад.
+Ба ҷои Cloudflare метавонед coturn-и худ (`TURN URL-ҳо` + `TURN secret`) ё ҳар TURN бо корбар/пароли собит гузоред.
+
+**Санҷиш:** ду телефон дар **интернети мобилӣ** (на ҳамон Wi-Fi) — занги видеоӣ бояд дар 1–3 сония пайваст шавад.
+Агар «Пайваст нашуд» бошад: Render → Logs → `cloudflare_turn_failed` (калид нодуруст) ва Панели админ → Танзимот → Зангҳо.
 
 ---
 
