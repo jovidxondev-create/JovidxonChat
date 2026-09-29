@@ -25,6 +25,7 @@ Android/**/*.iml
 *.aab
 
 # --- Маҳаллӣ ---
+*.zip
 _backup/
 deploy/
 .claude/

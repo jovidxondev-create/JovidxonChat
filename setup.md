@@ -5,11 +5,11 @@
 
 ## 0. Хулоса: чӣ нав шуд
 
-Backend-и PHP пурра нест карда шуд (нусха: `_backup/Server-v2-php-2026-09-29.zip`) ва аз сифр дар **Node.js** сохта шуд.
+Backend-и PHP пурра нест карда шуд ва аз сифр дар **Node.js** сохта шуд.
 
 ```text
 JovidxonChat\
-  Android\JovidxonChat\   барномаи Android (Kotlin + Compose)
+  Android\JovidxonChat\   барномаи Android (Kotlin + Compose) — дар компютер, ба GitHub намеравад
   Backend\                сервер: Node.js + Fastify + WebSocket + PostgreSQL
   admin_panel\            панели админ: React (дар /admin/-и ҳамон сервер)
   render.yaml             Blueprint: сервер + база дар Render
@@ -30,7 +30,7 @@ JovidxonChat\
 
 ## 1. Он чи лозим аст
 
-* Ҳисоби **GitHub** (репозиторийи **private**) ва **Git** дар компютер.
+* Репозиторийи **GitHub**: [`jovidxondev-create/JovidxonChat`](https://github.com/jovidxondev-create/JovidxonChat) ва **Git** дар компютер.
 * Ҳисоби **[Render](https://render.com)** (бо GitHub ворид шавед).
 * Файли **`Backend/.env.render`** — дар компютери шумо тайёр аст: калидҳои AlifTech ва SMS Gate аз `.env`-и пешина.
   Ин файл ба git **намеравад** (`.gitignore`); ба касе нафиристед.
@@ -41,47 +41,102 @@ JovidxonChat\
 
 ---
 
-## 2. Код ба GitHub
+## 2. Код дар GitHub
 
-1. GitHub → **New repository** → ном `jovidxon-chat` → **Private** → README/.gitignore **илова накунед** → *Create*.
-2. Дар папкаи лоиҳа:
+Дар [`github.com/jovidxondev-create/JovidxonChat`](https://github.com/jovidxondev-create/JovidxonChat) (шохаи `main`):
+`Backend/`, `admin_panel/`, `render.yaml`, `setup.md`, `README.md`. Барномаи Android, `.env.render`, `*.zip` ва
+`node_modules/` ба GitHub **намераванд** (`.gitignore`).
 
+> ⚠️ Файлҳои `JovidxonChat.zip` ва `Backend/.env.render`-ро ҳеҷ гоҳ дастӣ ба GitHub (Add file → Upload) бор накунед —
+> дар онҳо калидҳои SMS ҳастанд. Репозиторийро **Private** кунед: GitHub → *Settings* → *General* → *Danger Zone* →
+> **Change visibility** → Private (Render бо репозиторийи private ҳам кор мекунад).
+
+Навсозии минбаъда (баъди тағйири код):
 ```bash
 cd C:/Users/Jovidxon-Dev/Desktop/APP/JovidxonChat
 ```
 ```bash
-git init -b main
+git add Backend admin_panel render.yaml setup.md
 ```
 ```bash
-git add .
+git commit -m "Тавсифи тағйирот"
 ```
 ```bash
-git status
+git push
 ```
-Санҷед, ки дар рӯйхат **нестанд**: `.env`, `.env.render`, `_backup/`, `node_modules/`, `*.apk`, `local.properties`.
-```bash
-git commit -m "JovidxonChat v3: Node.js + PostgreSQL + React admin"
-```
-```bash
-git remote add origin https://github.com/<номи-шумо>/jovidxon-chat.git
-```
-```bash
-git push -u origin main
-```
+Render баъди `push` худкор deploy мекунад.
 
 ---
 
-## 3. Render: сервер ва база бо як Blueprint
+## 3. Render: база ва сервер
+
+Сервер базаро аз тағйирёбандаи **`DATABASE_URL`** мегирад. Ҷадвалҳоро худаш месозад — дар база ягон кори дастӣ
+(SQL, import) лозим нест. Ду роҳ ҳаст; **Роҳи А** осонтар аст.
+
+### Роҳи А — Blueprint (база худкор сохта ва пайваст мешавад)
 
 1. [dashboard.render.com](https://dashboard.render.com) → **New +** → **Blueprint**.
-2. GitHub-ро пайваст кунед ва репозиторийи `jovidxon-chat`-ро интихоб кунед. Render `render.yaml`-ро мехонад ва нишон медиҳад:
-   * **jovidxon-chat** — Web Service (Node, Free, Frankfurt)
-   * **jovidxon-db** — PostgreSQL 17 (Free, Frankfurt)
+2. GitHub-ро пайваст кунед ва репозиторийи **`JovidxonChat`**-ро интихоб кунед. Render `render.yaml`-ро мехонад ва нишон медиҳад:
+   * **jovidxon-db** — PostgreSQL 17 (Free, Frankfurt) — **база**
+   * **jovidxon-chat** — Web Service (Node, Free, Frankfurt) — сервер
 3. Render 4 қимати махфиро мепурсад — аз `Backend/.env.render` нусха кунед:
    `SMS_ALIF_API_KEY`, `SMS_GATE_USER`, `SMS_GATE_PASSWORD`, `SMS_GATE_DEVICE_ID`.
 4. **Deploy Blueprint** (ё *Apply*). Аввал база сохта мешавад, баъд сервер (build ~3–6 дақиқа).
+   `DATABASE_URL`-и сервер **худкор** ба суроғаи дохилии ҳамин база гузошта мешавад.
 5. Дар саҳифаи **jovidxon-chat** суроғаро бинед: `https://jovidxon-chat.onrender.com`.
    Агар ин ном банд бошад, Render пасванд илова мекунад (масалан `jovidxon-chat-ab12.onrender.com`) — он гоҳ қисми 6.
+
+### Роҳи Б — дастӣ: аввал база, баъд сервер
+
+**1. Сохтани база:** **New +** → **Postgres**:
+
+| Майдон | Қимат |
+| --- | --- |
+| Name | `jovidxon-db` |
+| Database | `jovidxon` (баъдтар иваз намешавад) |
+| User | `jovidxon` (баъдтар иваз намешавад) |
+| Region | **Frankfurt (EU Central)** — ҳатман ҳамон минтақае, ки сервер дар он аст |
+| PostgreSQL Version | **17** |
+| Plan | Free (ё пулакӣ, қисми 9) |
+
+**Create Database** → 1–3 дақиқа сабр кунед, то ҳолат **Available** шавад.
+
+**2. Суроғаи база:** саҳифаи **jovidxon-db** → тугмаи **Connect** (болои рост) ё **Info** → **Internal Database URL** → нусха
+(`postgresql://jovidxon:…@dpg-…-a/jovidxon`). Ин суроға махфӣ аст (пароль дорад).
+
+**3. Сохтани сервер:** **New +** → **Web Service** → репозиторийи `JovidxonChat`:
+
+| Майдон | Қимат |
+| --- | --- |
+| Name | `jovidxon-chat` |
+| Region | **Frankfurt** (ҳамон минтақаи база!) |
+| Branch | `main` · Root Directory — холӣ |
+| Runtime | Node |
+| Build Command | `cd Backend && npm ci --omit=dev && cd ../admin_panel && npm ci --include=dev && npm run build` |
+| Start Command | `node Backend/src/server.js` |
+| Instance Type | Free |
+| Health Check Path (*Advanced*) | `/api/v1/health` |
+
+**4. Environment Variables** (ҳамон ҷо ё баъдтар **Environment**):
+
+| Key | Value |
+| --- | --- |
+| `DATABASE_URL` | **Internal Database URL** аз қадами 2 — пайвасти база маҳз ҳамин аст |
+| `APP_SECRET` | сатри тасодуфӣ ≥ 32 аломат (тугмаи **Generate** ё `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`) |
+| `ADMIN_SETUP_CODE` | сатри тасодуфӣ (**Generate**) — барои қисми 4 |
+| `NODE_VERSION` | `24` |
+| `NODE_ENV` | `production` |
+| `GOOGLE_CLIENT_IDS` | `601976830935-f5rtf3jsipuotff0b5p8g6cl1rcafi0r.apps.googleusercontent.com` |
+| `SMS_DRIVER` · `SMS_FALLBACK_DRIVER` · `SMS_ALIF_SENDER` | `alif` · `smsgate` · `Olami Ashyo` |
+| `SMS_ALIF_API_KEY`, `SMS_GATE_USER`, `SMS_GATE_PASSWORD`, `SMS_GATE_DEVICE_ID` | аз `Backend/.env.render` |
+
+**Deploy Web Service.** Дар **Logs** бояд `server_started` бошад.
+
+**Муҳим дар бораи пайвасти база:**
+* **Internal** URL танҳо вақте кор мекунад, ки база ва сервер дар як минтақа (Frankfurt) ва як workspace бошанд; он тез аст ва SSL намехоҳад.
+* **External** URL — танҳо барои пайваст аз компютери худ (DBeaver, `pg_dump`); SSL ҳатмист. Агар бо он сервери Node-ро
+  дар компютер оғоз кунед ва хатои `self-signed certificate` ояд — `DATABASE_SSL=no-verify` гузоред.
+* Хатои `ECONNREFUSED`, `ENOTFOUND` ё `startup_failed` дар Logs — одатан минтақаҳо гуногунанд ё External/Internal омехта шудааст.
 
 **Санҷиш** (дар браузер):
 * `https://jovidxon-chat.onrender.com/api/v1/health` → `"status":"ok"`
@@ -217,11 +272,11 @@ pg_dump "<External Database URL>" -Fc -f jovidxon-backup.dump
 
 ## 11. Амният — checklist
 
-- [ ] Репозиторийи GitHub **private** аст; `.env`, `.env.render`, `_backup/` дар он нестанд
+- [ ] Репозиторийи GitHub **private** аст; `.env`, `.env.render`, `*.zip` дар он нестанд
 - [ ] Дар Render ва GitHub 2FA фаъол аст
 - [ ] Админи аввал сохта шуд, 2FA фаъол; `ADMIN_RESET` дар Environment нест
 - [ ] `OTP_TEST_NUMBERS` холӣ (ё рамзҳои душвор, танҳо барои баррасии Google Play)
-- [ ] `_backup/*.zip` ва `_backup/*.bak` калидҳои пешинаро доранд — ба касе нафиристед
+- [ ] `JovidxonChat.zip` ва ҳар нусхаи кӯҳнаи `.env` калидҳоро доранд — ба касе нафиристед ва ба GitHub бор накунед
 - [ ] Агар калиди AlifTech ё пароли SMS Gate ҷое ошкор шуда бошад — онҳоро дар худи хидмат иваз ва дар Панел → Танзимот нав кунед
 - [ ] То рӯзи 30-юм база ба нақшаи пулакӣ гузаронида шуд (қисми 9)
 
