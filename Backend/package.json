@@ -1,0 +1,31 @@
+{
+  "name": "jovidxonchat-backend",
+  "version": "3.0.0",
+  "private": true,
+  "description": "JovidxonChat API + realtime (WebSocket) server — Node.js, Fastify, PostgreSQL",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --env-file-if-exists=.env --watch src/server.js",
+    "test": "node test/run.mjs",
+    "build:admin": "npm --prefix ../admin_panel ci && npm --prefix ../admin_panel run build"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.2",
+    "@fastify/multipart": "^10.1.2",
+    "@fastify/static": "^10.1.5",
+    "@fastify/websocket": "^11.3.1",
+    "fastify": "^5.12.5",
+    "file-type": "^22.1.1",
+    "pg": "^8.23.0",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "embedded-postgres": "17.10.0-beta.17",
+    "ws": "^8.22.0"
+  }
+}

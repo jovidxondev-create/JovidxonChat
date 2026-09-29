@@ -1,0 +1,32 @@
+# --- Махфӣ: ҳеҷ гоҳ ба git нафиристед ---
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+keystore.properties
+local.properties
+
+# --- Node ---
+node_modules/
+npm-debug.log*
+*.log
+
+# --- Натиҷаи build (Render худаш месозад) ---
+admin_panel/dist/
+
+# --- Android ---
+Android/**/build/
+Android/**/.gradle/
+Android/**/.kotlin/
+Android/**/.idea/
+Android/**/*.iml
+*.apk
+*.aab
+
+# --- Маҳаллӣ ---
+_backup/
+deploy/
+.claude/
+.DS_Store
+Thumbs.db

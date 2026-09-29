@@ -1,0 +1,71 @@
+# JovidxonChat — Render Blueprint (https://render.com/docs/blueprint-spec)
+#
+# Як web service (Node.js: API + WebSocket + панели админ дар /admin) ва як базаи PostgreSQL.
+# Ҳамаи маълумот (корбарон, паёмҳо, медиа, танзимот, пароли админ) дар PostgreSQL аст —
+# дар диски сервер ҳеҷ чиз нигоҳ дошта намешавад.
+#
+# Қиматҳои махфӣ (sync: false) дар ин файл нестанд: Render онҳоро ҳангоми эҷоди Blueprint
+# мепурсад (нусхааш дар Backend/.env.render, ки ба git намеравад). Қадамҳо: setup.md.
+
+services:
+  - type: web
+    name: jovidxon-chat
+    runtime: node
+    region: frankfurt
+    plan: free
+    buildCommand: >-
+      cd Backend && npm ci --omit=dev &&
+      cd ../admin_panel && npm ci --include=dev && npm run build
+    startCommand: node Backend/src/server.js
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: commit
+    buildFilter:
+      paths:
+        - Backend/**
+        - admin_panel/**
+      ignoredPaths:
+        - Backend/test/**
+        - Backend/docs/**
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jovidxon-db
+          property: connectionString
+      # Калиди асосӣ (JWT, рамзгузории танзимоти махфӣ). ҲЕҶ ГОҲ иваз накунед — ҳама аз система
+      # мебароянд ва калидҳои SMS дар база хонда намешаванд.
+      - key: APP_SECRET
+        generateValue: true
+      # Коди насби якуммини админ: Render → jovidxon-chat → Environment → нусха → /admin.
+      - key: ADMIN_SETUP_CODE
+        generateValue: true
+      - key: GOOGLE_CLIENT_IDS
+        value: 601976830935-f5rtf3jsipuotff0b5p8g6cl1rcafi0r.apps.googleusercontent.com
+      - key: SMS_DRIVER
+        value: alif
+      - key: SMS_FALLBACK_DRIVER
+        value: smsgate
+      - key: SMS_ALIF_SENDER
+        value: Olami Ashyo
+      - key: SMS_ALIF_API_KEY
+        sync: false
+      - key: SMS_GATE_USER
+        sync: false
+      - key: SMS_GATE_PASSWORD
+        sync: false
+      - key: SMS_GATE_DEVICE_ID
+        sync: false
+
+databases:
+  - name: jovidxon-db
+    plan: free
+    region: frankfurt
+    databaseName: jovidxon
+    user: jovidxon
+    postgresMajorVersion: "17"
+    # Танҳо пайвасти дохилӣ (аз jovidxon-chat). Барои DBeaver/psql IP-и худро дар
+    # Render → jovidxon-db → Networking илова кунед.
+    ipAllowList: []
